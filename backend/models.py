@@ -97,3 +97,13 @@ class Recommendations(Base):
             name="_analyst_player_week_uc",
         ),
     )
+
+
+class Game(Base):
+    __tablename__ = "games"
+    # Primary Key
+    game_id = Column(Integer, primary_key=True, index=True)
+
+    # Foreign Key
+    home_team_id = Column(Integer, ForeignKey("analysts.analyst_id"), nullable=False)
+    away_team_id = Column(Integer, ForeignKey(""), nullable=False)
