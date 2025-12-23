@@ -59,3 +59,41 @@ class Analysts(Base):
     correct_predictions = Column(Integer, default=0)
     # Relationships
     recommendations = relationship("Recommendation", back_populates="analyst")
+
+
+class Recommendations(Base):
+    __tablename__ = "recommendations"
+    # primary key
+    recommendation_id = Column(Integer, primary_key=True, index=True)
+    # foreign key
+    analyst_id = Column(Integer, ForeignKey("analysts.analyst_id"), nullable=False)
+    player_id = Column(Integer, ForeignKey("players.player_id"), nullable=False)
+    # rankings
+    week = Column(Integer, nullable=False)
+    season = Column(Integer, nullable=False)
+    designation = Column(String(10), nullable=False)  # Start,Sit,Flex
+    project_points = Column(Float, nullable=False)
+    position_rank = Column(Integer, nullable=True)
+    scoring_format = Column(String(10), nullable=False)  # PPR,Half,Standard
+    confidence = Column(String(10), nullable=True)
+    analysis_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, Default=datetime.datetime.now)
+
+    # Relationships
+    analyst = relationship("Analyst", back_populates="recommendations")
+    player = relationship(
+        "Player"
+    )  # We didn't add back_populates on Player, so this is a one-way link for now, which is fine.
+
+    # Unique Constraint
+    # This ensures an analyst can't have duplicate records for the same player/week/format
+    __table_args__ = (
+        UniqueConstraint(
+            "analyst_id",
+            "player_id",
+            "week",
+            "season",
+            "scoring_format",
+            name="_analyst_player_week_uc",
+        ),
+    )
