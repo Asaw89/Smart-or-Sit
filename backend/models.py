@@ -35,7 +35,7 @@ class Player(Base):
     team_id = Column(Integer, ForeignKey("teams.team_id"))
     # player details
     name = Column(String(100), nullable=False, index=True)
-    position = Column(String(5), Nullable=False)
+    position = Column(String(5), nullable=False)
     jersey_number = Column(Integer, nullable=True)
     headshot_url = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)
@@ -44,7 +44,7 @@ class Player(Base):
     team = relationship("Team", back_populates="players")
 
 
-class Analysts(Base):
+class Analyst(Base):
     __tablename__ = "analysts"
     # primary key
     analyst_id = Column(Integer, primary_key=True, index=True)
@@ -61,7 +61,7 @@ class Analysts(Base):
     recommendations = relationship("Recommendation", back_populates="analyst")
 
 
-class Recommendations(Base):
+class Recommendation(Base):
     __tablename__ = "recommendations"
     # primary key
     recommendation_id = Column(Integer, primary_key=True, index=True)
@@ -72,12 +72,12 @@ class Recommendations(Base):
     week = Column(Integer, nullable=False)
     season = Column(Integer, nullable=False)
     designation = Column(String(10), nullable=False)  # Start,Sit,Flex
-    project_points = Column(Float, nullable=False)
+    projected_points = Column(Float, nullable=False)
     position_rank = Column(Integer, nullable=True)
     scoring_format = Column(String(10), nullable=False)  # PPR,Half,Standard
     confidence = Column(String(10), nullable=True)
     analysis_notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, Default=datetime.datetime.now)
+    created_at = Column(DateTime, default=datetime.datetime.now)
 
     # Relationships
     analyst = relationship("Analyst", back_populates="recommendations")
@@ -105,5 +105,100 @@ class Game(Base):
     game_id = Column(Integer, primary_key=True, index=True)
 
     # Foreign Key
-    home_team_id = Column(Integer, ForeignKey("analysts.analyst_id"), nullable=False)
-    away_team_id = Column(Integer, ForeignKey(""), nullable=False)
+    home_team_id = Column(Integer, ForeignKey("teams.team_id"), nullable=False)
+    away_team_id = Column(Integer, ForeignKey("teams.team_id"), nullable=False)
+
+    # attributes
+    week = Column(Integer, nullable=False)
+    season = Column(Integer, nullable=False)
+    status = Column(String(20), default="Scheduled")  # Scheduled,Live,Final
+    home_score = Column(Integer, default=0)
+    away_score = Column(Integer, default=0)
+    time_remaining = Column(String(10), nullable=True)
+
+    # Relationships
+    home_team = relationship("Team", foreign_keys=[home_team_id])
+    away_team = relationship("Team", foreign_keys=[away_team_id])
+
+
+class ActualPerformance(Base):
+    """Actual fantasy points and stats scored by players"""
+
+    __tablename__ = "actual_performances"
+
+    # Primary Key
+    performance_id = Column(Integer, primary_key=True, index=True)
+
+    # Foreign Keys
+    player_id = Column(Integer, ForeignKey("players.player_id"), nullable=False)
+    game_id = Column(Integer, ForeignKey("games.game_id"), nullable=False)
+
+    # Context
+    week = Column(Integer, nullable=False)
+    season = Column(Integer, nullable=False)
+    opponent = Column(String(10), nullable=True)  # e.g., "@CLE", "vs BAL"
+    game_result = Column(String(20), nullable=True)  # e.g., "W 24-17"
+
+    # Fantasy Points
+    points_ppr = Column(Float, default=0.0)
+    points_half = Column(Float, default=0.0)
+    points_standard = Column(Float, default=0.0)
+
+    # Passing Stats
+    pass_completions = Column(Integer, default=0)
+    pass_attempts = Column(Integer, default=0)
+    pass_yards = Column(Integer, default=0)
+    pass_tds = Column(Integer, default=0)
+    interceptions = Column(Integer, default=0)
+
+    # Rushing Stats
+    rush_carries = Column(Integer, default=0)
+    rush_yards = Column(Integer, default=0)
+    rush_tds = Column(Integer, default=0)
+
+    # Receiving Stats
+    receptions = Column(Integer, default=0)
+    rec_yards = Column(Integer, default=0)
+    rec_tds = Column(Integer, default=0)
+    targets = Column(Integer, default=0)
+
+    # Misc
+    fumbles_lost = Column(Integer, default=0)
+
+    # DST Stats
+    dst_tackles = Column(Integer, default=0)
+    dst_sacks = Column(Integer, default=0)
+    dst_forced_fumbles = Column(Integer, default=0)
+    dst_fumble_recoveries = Column(Integer, default=0)
+    dst_interceptions = Column(Integer, default=0)
+    dst_int_return_tds = Column(Integer, default=0)
+    dst_fumble_return_tds = Column(Integer, default=0)
+    dst_points_allowed = Column(Integer, default=0)
+
+    # Kicking Stats
+    kick_fg_made_0_39 = Column(Integer, default=0)
+    kick_fg_att_0_39 = Column(Integer, default=0)
+    kick_fg_made_40_49 = Column(Integer, default=0)
+    kick_fg_att_40_49 = Column(Integer, default=0)
+    kick_fg_made_50_plus = Column(Integer, default=0)
+    kick_fg_att_50_plus = Column(Integer, default=0)
+    kick_xp_made = Column(Integer, default=0)
+    kick_xp_att = Column(Integer, default=0)
+
+    # Metadata
+    updated_at = Column(
+        DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now
+    )
+
+    # Relationships
+    player = relationship("Player", back_populates="performances")
+    game = relationship("Game", back_populates="performances")
+
+    # Unique Constraint
+    __table_args__ = (
+        UniqueConstraint(
+            "player_id",
+            "game_id",
+            name="_player_game_uc",
+        ),
+    )
