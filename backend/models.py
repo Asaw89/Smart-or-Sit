@@ -122,8 +122,6 @@ class Game(Base):
 
 
 class ActualPerformance(Base):
-    """Actual fantasy points and stats scored by players"""
-
     __tablename__ = "actual_performances"
 
     # Primary Key
